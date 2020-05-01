@@ -2,123 +2,130 @@
 <html>
 <%- include('../layouts/head') %>
 
-  <body id="dashboard-page">
-    <%- include('../layouts/header') %>
-      <main>
+<body id="dashboard-page">
+  <%- include('../layouts/header') %>
+  <main>
 
-        <div id="selected">
-          <h1 id="h1-selected">You have selected the
-            <%= plan %> diet plan!
-          </h1>
+    <div id="selected">
+      <h1 id="h1-selected">You have selected the
+        <%= plan %> diet plan!
+      </h1>
 
-          <p>You will reach your goal weight around
-            <p class="diet-values"><b><%= projDate %></b></p>
-            <br>
-            We have generated your meal plan for the day according to your current body metrics and diet plan. Every 7 days update your
-            new weight to adjust your meal plan, and feel free to change your diet plan to slow or fast-track your results.
-          </p>
-          <button id="update-button" type="button" class="showButton" form="hiddenForm" name="hiddenForm">Update Plan</button>
+      <p>You will reach your goal weight around
+        <p class="diet-values"><b><%= projDate %></b></p>
+        <br>
+        We have generated your meal plan for the day according to your current body metrics and diet plan. Every 7 days
+        update your
+        new weight to adjust your meal plan, and feel free to change your diet plan to slow or fast-track your results.
+      </p>
+      <button id="update-button" type="button" class="showButton" form="hiddenForm" name="hiddenForm">Update
+        Plan</button>
+    </div>
+
+    <section id="dashboard-form">
+      <form action="/my-dashboard/<%= user_id %>" method="post" id="hiddenForm" class="form">
+
+        <% console.log(user_id) %>
+        <input type="hidden" name="_method" value="PUT">
+        <div id="sex">
+          <label for="male">Male</label>
+          <input type="radio" name="sex" id="male" value="male" required />
+          <label for="female">Female </label>
+          <input type="radio" name="sex" id="female" value="female" required />
         </div>
 
-        <section id="dashboard-form">
-          <form action="/my-dashboard/<%= user_id %>" method="post" id="hiddenForm" class="form">
+        <div id="stats">
+          <div id="">
+            <label for="getAge">Age: </label>
+            <input type="text" class="form-control" id="getAge" placeholder="Years" name="age"
+              value="<%= metrics.age %>" required>
+          </div>
 
-            <% console.log(user_id) %>
-              <input type="hidden" name="_method" value="PUT">
-              <div id="sex">
-                <label for="male">Male</label>
-                <input type="radio" name="sex" id="male" value="male" required/>
-                <label for="female">Female </label>
-                <input type="radio" name="sex" id="female" value="female" required/>
-              </div>
-
-              <div id="stats">
-                <div id="">
-                  <label for="getAge">Age: </label>
-                  <input type="text" class="form-control" id="getAge" placeholder="Years" name="age" value="<%= metrics.age %>" required>
-                </div>
-
-                <div id="age">
-                  <label for="getHeight">Height: </label>
-                  <input type="text" class="form-control" id="getHeight" placeholder="Inches" name="height" value="<%= metrics.height %>" required>
-                </div>
+          <div id="age">
+            <label for="getHeight">Height: </label>
+            <input type="text" class="form-control" id="getHeight" placeholder="Inches" name="height"
+              value="<%= metrics.height %>" required>
+          </div>
 
 
-                <div id="weight">
-                  <label for="getWeight">Weight: </label>
-                  <input type="text" class="form-control" id="getWeight" placeholder="Pounds" name="weight" value="<%= metrics.weight %>" required>
-                </div>
+          <div id="weight">
+            <label for="getWeight">Weight: </label>
+            <input type="text" class="form-control" id="getWeight" placeholder="Pounds" name="weight"
+              value="<%= metrics.weight %>" required>
+          </div>
 
-                <div id="goal">
-                  <label for="getGoal">Goal Weight: </label>
-                  <input type="text" class="form-control" id="getGoal" placeholder="Pounds" name="goal" value="<%= metrics.goal %>" required>
-                </div>
-              </div>
-
-              <div id="activity">
-                <label for="getActivity">Daily Activity:</label>
-                <select name="getActivity" id="getActivity" required>
-                  <option value="1.2">Sedentary (little or no exercise)</option>
-                  <option value="1.375">Lightly active (light exercise 1-3 days/week)</option>
-                  <option value="1.55">Moderately active (moderate exercise 3-5 days/week)</option>
-                  <option value="1.725">Very active (hard exercise 6-7 days a week)</option>
-                  <option value="1.9">Extremely active (extreme exercise & physical job)</option>
-                </select>
-              </div>
-
-              <div id="weight-loss-speed">
-                <p>How Fast Would You Like To Lose Weight?</p>
-                <label for="mild">Mild</label>
-                <input type="radio" name="loss" id="mild" value="mild" required/>
-                <label for="moderate">Moderate</label>
-                <input type="radio" name="loss" id="moderate" value="moderate" required/>
-                <label for="extreme">Extreme</label>
-                <input type="radio" name="loss" id="extreme" value="extreme" required/>
-
-              </div>
-
-              <button class="updateBtn" type="submit" id="button1"> Update Plan</button>
-
-          </form>
-        </section>
-
-        <div id="daily-meal">
-          <p>Your daily meal plan is designed to fit your diet plan based on your caloric needs to achieve your goal weight.</p>
-          <% nutrients  %>
-            <div id="combined">
-              <li class="">Combined Meal Calories:
-                <p class="diet-values"><b><%= nutrients.calories %>g</b></p>
-              </li>
-              <li class="">Combined Meal Protein:
-                <p class="diet-values"><b><%= nutrients.protein %>g</b></p>
-              </li>
-              <li class="">Combined Meal Fat:
-                <p class="diet-values"><b><%= nutrients.fat %>g</b></p>
-              </li>
-              <li class="">Combined Meal carbohydrates:
-                <p class="diet-values"><b><%= nutrients.carbohydrates %>g</b></p>
-              </li>
-            </div>
+          <div id="goal">
+            <label for="getGoal">Goal Weight: </label>
+            <input type="text" class="form-control" id="getGoal" placeholder="Pounds" name="goal"
+              value="<%= metrics.goal %>" required>
+          </div>
         </div>
-        <%  %>
 
-          <br>
-          <br>
+        <div id="activity">
+          <label for="getActivity">Daily Activity:</label>
+          <select name="getActivity" id="getActivity" required>
+            <option value="1.2">Sedentary (little or no exercise)</option>
+            <option value="1.375">Lightly active (light exercise 1-3 days/week)</option>
+            <option value="1.55">Moderately active (moderate exercise 3-5 days/week)</option>
+            <option value="1.725">Very active (hard exercise 6-7 days a week)</option>
+            <option value="1.9">Extremely active (extreme exercise & physical job)</option>
+          </select>
+        </div>
 
-          <ul id="meals-container">
-            <% meals.forEach(meal => { %>
-              <div class="meals">
-                <li class="img"><img src='<%= meal.image %>' /></li>
-                <li class="">Meal Name:
-                  <%= meal.title %>
-                </li>
-                <li class="">Time to Prepare:
-                  <%= meal.readyInMinutes %> minutes
-                </li>
-              </div>
-              <% }); %>
+        <div id="weight-loss-speed">
+          <p>How Fast Would You Like To Lose Weight?</p>
+          <label for="mild">Mild</label>
+          <input type="radio" name="loss" id="mild" value="mild" required />
+          <label for="moderate">Moderate</label>
+          <input type="radio" name="loss" id="moderate" value="moderate" required />
+          <label for="extreme">Extreme</label>
+          <input type="radio" name="loss" id="extreme" value="extreme" required />
 
-                <!-- <div class="ingredients">
+        </div>
+
+        <button class="updateBtn" type="submit" id="button1"> Update Plan</button>
+
+      </form>
+    </section>
+
+    <div id="daily-meal">
+      <p>Your daily meal plan is designed to fit your diet plan based on your caloric needs to achieve your goal weight.
+      </p>
+      <% nutrients  %>
+      <div id="combined">
+        <li class="">Combined Meal Calories:
+          <p class="diet-values"><b><%= nutrients.calories %>g</b></p>
+        </li>
+        <li class="">Combined Meal Protein:
+          <p class="diet-values"><b><%= nutrients.protein %>g</b></p>
+        </li>
+        <li class="">Combined Meal Fat:
+          <p class="diet-values"><b><%= nutrients.fat %>g</b></p>
+        </li>
+        <li class="">Combined Meal carbohydrates:
+          <p class="diet-values"><b><%= nutrients.carbohydrates %>g</b></p>
+        </li>
+      </div>
+    </div>
+    <%  %>
+
+    <br>
+    <br>
+
+    <ul id="meals-container">
+      <% meals.forEach(meal => { %>
+      <div class="meals">
+        <li class="img"><img src='<%= meal.image %>' /></li>
+        <li class="">Meal Name:
+          <%= meal.title %>
+        </li>
+        <li class="">Time to Prepare:
+          <%= meal.readyInMinutes %> minutes
+        </li>
+      </div>
+      <% }); %>
+
+      <!-- <div class="ingredients">
     
       <% ingredients.forEach(ingr => { %>
         <li class="">Ingredient <%= ingr.name %></li>
@@ -126,36 +133,36 @@
         <li class=""><%= ingr.unit %></li>
       </div>
         <% }); %>  -->
-          </ul>
+    </ul>
 
-      <!-- <section>
-      <form  action="/saved-menus/<%= user_id %>" method="post" id="" class="save">
-        
+    <section>
+      <form action="/saved-menus/<%= user_id %>" method="post" id="" class="save">
+
         <% nutrients  %>
-          <input type="hidden" name="calories" value="<%= nutrients.calories %>">
-          <input type="hidden"  name="protein" value="<%= nutrients.protein %>">
-          <input type="hidden" name="fat"  value="<%= nutrients.fat %>">
-          <input type="hidden" name="carbohydrates" value="<%= nutrients.carbohydrates %>">   
+        <input type="hidden" name="calories" value="<%= nutrients.calories %>">
+        <input type="hidden" name="protein" value="<%= nutrients.protein %>">
+        <input type="hidden" name="fat" value="<%= nutrients.fat %>">
+        <input type="hidden" name="carbohydrates" value="<%= nutrients.carbohydrates %>">
         <%  %>
         <% meals.forEach(meal => { %>
-          <input type="hidden" name="image" value="<%= meal.image %>">
-          <input type="hidden" name="title" value="<%= meal.title %>">
-          <input type="hidden" name="readyInMinutes" value="<%= meal.readyInMinutes %>">
+        <input type="hidden" name="image" value="<%= meal.image %>">
+        <input type="hidden" name="title" value="<%= meal.title %>">
+        <input type="hidden" name="readyInMinutes" value="<%= meal.readyInMinutes %>">
         <% }); %>
         <% ingredients.forEach(ingr => { %>
-          <input type="hidden" name="name" value="<%= ingr.name %>">
-          <input type="hidden" name="value" value="<%= ingr.value %>">
-          <input type="hidden" name="unit" value="<%= ingr.unit %>">
-        <% }); %> 
+        <input type="hidden" name="name" value="<%= ingr.name %>">
+        <input type="hidden" name="value" value="<%= ingr.value %>">
+        <input type="hidden" name="unit" value="<%= ingr.unit %>">
+        <% }); %>
 
       </form>
-    </section> -->
-      <!-- <div id="dashboard-save-button">
-        <button class="btn btn-primary loginButton" type="submit">Save Plan</button>
-      </div> -->
+    </section>
+    <div id="dashboard-save-button">
+      <button class="btn btn-primary loginButton" type="submit">Save Plan</button>
+    </div>
 
-      </main>
-      <%- include('../layouts/footer') %>
-  </body>
+  </main>
+  <%- include('../layouts/footer') %>
+</body>
 
 </html>

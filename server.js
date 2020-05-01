@@ -39,11 +39,24 @@ app.post('/join', addUser);
 app.post('/', allowIn);
 
 app.post('/my-dashboard/:user_id', saveMetricsToDB);
-
 app.put('/my-dashboard/:user_id', updateMetrics);
+app.post('/saved-menus/:user_id', saveMealPlanToDB);
+app.delete('/delete/:user_id', deleteMeal);
 
 app.get('*', (request, response) => response.status(404).send('This route does not exist'));
 
+
+
+function createJoke(request, response) {
+  superagent.get('https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/food/jokes/random')
+    .set('X-RapidAPI-Host', 'spoonacular-recipe-food-nutrition-v1.p.rapidapi.com')
+    .set('X-RapidAPI-Key', `${process.env.X_RAPID_API_KEY}`)
+    .then(apiResponse => {
+      let joke = apiResponse.body.text
+      response.render('pages/index', { joke: joke })
+    })
+    .catch(err => handleError(err, response))
+}
 
 function addUser(request, response) {
   let { firstname, lastname, username } = request.body;
@@ -65,8 +78,7 @@ function addUser(request, response) {
         let values = [firstname, lastname, username];
 
         client.query(SQL, values)
-          .then(result => {
-            console.log(result);
+          .then(() => {
             response.redirect('/');
           })
           .catch(error => handleError(error, response));
@@ -92,7 +104,6 @@ function allowIn(request, response) {
   client.query(checkForUser, value)
 
     .then(results => {
-      console.log(results);
 
       if (results.rowCount !== 0 && results.rows[0].username === username) {
         const user_id = results.rows[0].id;
@@ -107,6 +118,8 @@ function allowIn(request, response) {
 function aboutUs(request, response) {
   response.render('pages/about');
 }
+
+
 
 function getBmr(request) {
   let height = request.body.height;
@@ -141,7 +154,6 @@ function goalDate(request) {
   let loss = request.body.loss;
   let weight = request.body.weight;
   let goal = request.body.goal;
-
 
   if (loss === 'mild') {
     let weeks = ((weight - goal) / .5);
@@ -181,10 +193,28 @@ function goalDate(request) {
   }
 }
 
+
+function Recipe(newRec) {
+
+  this.name = newRec.name;
+  this.value = newRec.amount.us.value;
+  this.unit = newRec.amount.us.unit;
+}
+
+function Meal(newMeal) {
+  const placeholderImage = 'https://i.imgur.com/J5LVHEL.jpg';
+  this.id = newMeal.id ? newMeal.id : 'No id available';
+  this.title = newMeal.title ? newMeal.title : 'No title available';
+  this.readyInMinutes = newMeal.readyInMinutes ? newMeal.readyInMinutes : 'No info available';
+  this.servings = newMeal.servings ? newMeal.servings : 'No info available';
+  this.image = `https://spoonacular.com/recipeImages/${newMeal.image}` ? `https://spoonacular.com/recipeImages/${newMeal.id}-312x231.jpg` : placeholderImage;
+}
+
+
 function searchRecipe(data) {
   let id = data.idArray;
 
-  for (let i = 0; i <= id.length; i++) {
+  for (let i = 0; i <= 3; i++) {
 
     return superagent.get(`https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/${id[i]}/ingredientWidget.json`)
       .set('X-RapidAPI-Host', 'spoonacular-recipe-food-nutrition-v1.p.rapidapi.com')
@@ -193,7 +223,7 @@ function searchRecipe(data) {
       .then(apiResponse => {
 
         let ingredients = apiResponse.body.ingredients.map(recResult => new Recipe(recResult));
-
+        console.log(ingredients)
         return [ingredients, data];
       })
   }
@@ -211,9 +241,7 @@ let searchNewMeals = function (request, response) {
 
     .then(apiResponse => {
       let data = {};
-      console.log(apiResponse)
       data.meals = apiResponse.body.meals.map(mealResult => new Meal(mealResult));
-      console.log(data.meals)
       data.nutrients = apiResponse.body.nutrients;
       data.idArray = data.meals.map((meal) => meal.id);
       return data;
@@ -232,15 +260,24 @@ let searchNewMeals = function (request, response) {
     .catch(err => handleError(err));
 }
 
+
+
 function saveMetricsToDB(request, response) {
-  let { age, height, sex, weight, getActivity, goal, loss } = request.body;
+  let user = request.params.user_id;
+  console.log(user)
+  if (user) {
+    console.log('user')
+    return updateMetrics(request, response);
+  } else {
+    let { age, height, sex, weight, getActivity, goal, loss } = request.body;
 
-  let SQL = 'INSERT INTO metrics (age, height, sex, weight, getActivity, goal, loss, users_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);';
-  let values = [age, height, sex, weight, getActivity, goal, loss, request.params.user_id];
+    let SQL = 'INSERT INTO metrics (age, height, sex, weight, getActivity, goal, loss, users_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);';
+    let values = [age, height, sex, weight, getActivity, goal, loss, request.params.user_id];
 
-  return client.query(SQL, values)
-    .then(searchNewMeals(request, response))
-    .catch(err => handleError(err, response))
+    return client.query(SQL, values)
+      .then(searchNewMeals(request, response))
+      .catch(err => handleError(err, response))
+  }
 }
 
 function updateMetrics(request, response) {
@@ -252,35 +289,61 @@ function updateMetrics(request, response) {
     .catch(err => handleError(err, response));
 }
 
-function Recipe(newRec) {
+function saveMealPlanToDB(request, response) {
 
-  this.name = newRec.name;
-  this.value = newRec.amount.us.value;
-  this.unit = newRec.amount.us.unit;
+  // let { username } = request.body;
+  // let checkForUser = 'SELECT * FROM users WHERE username = $1;';
+
+  // let value = [username];
+
+  // client.query(checkForUser, value)
+
+  //   .then(results => {
+
+  //     if (results.rowCount !== 0 && results.rows[0].username === username) {
+  //       const user_id = results.rows[0].id;
+  //       response.render('pages/intake-form', { user_id: user_id });
+  //     } else {
+  //       response.render('pages/join');
+  //     }
+  //   })
+  //   .catch(error => handleError(error, response))
+
+
+
+  let { calories, protein, fat, carbohydrates, image, title, readyInMinutes, name, value, unit } = request.body;
+  console.log(request.body)
+
+  const SQL = 'INSERT INTO meals (calories, protein, fat, carbohydrates, image, title, readyInMinutes, name, value, unit, users_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);';
+  const values = [calories, protein, fat, carbohydrates, image, title, readyInMinutes, name, value, unit, request.params.user_id];
+
+  client.query(SQL, values)
+    .then(() => {
+      const SQL = 'SELECT * FROM meals';
+
+      return client.query(SQL)
+        .then(result => {
+          let data = result.rows;
+          response.render('pages/saved-menus', { result: data, plansSaved: result.rowCount, user_id: request.params.user_id })
+        })
+        .catch(error => handleError(error, response));
+    })
+    .catch(error => handleError(error, response));
+
 }
 
-function Meal(newMeal) {
-  const placeholderImage = 'https://i.imgur.com/J5LVHEL.jpg';
-  this.id = newMeal.id ? newMeal.id : 'No id available';
-  this.title = newMeal.title ? newMeal.title : 'No title available';
-  this.readyInMinutes = newMeal.readyInMinutes ? newMeal.readyInMinutes : 'No info available';
-  this.servings = newMeal.servings ? newMeal.servings : 'No info available';
-  this.image = `https://spoonacular.com/recipeImages/${newMeal.image}` ? `https://spoonacular.com/recipeImages/${newMeal.id}-312x231.jpg` : placeholderImage;
+function deleteMeal(request, response) {
+  const SQL = 'DELETE FROM meals WHERE id=$1;';
+  const value = [request.params.user_id];
+  console.log(SQL, value)
+  client.query(SQL, value)
+    .then(response.redirect('/saved-menus'))
+    .catch(error => handleError(error, response));
 }
+
 
 function handleError(error, response) {
   console.log(error);
   console.log('response', response);
   response.render('pages/error', { error: error });
-}
-
-function createJoke(request, response) {
-  superagent.get('https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/food/jokes/random')
-    .set('X-RapidAPI-Host', 'spoonacular-recipe-food-nutrition-v1.p.rapidapi.com')
-    .set('X-RapidAPI-Key', `${process.env.X_RAPID_API_KEY}`)
-    .then(apiResponse => {
-      let joke = apiResponse.body.text
-      response.render('pages/index', { joke: joke })
-    })
-    .catch(err => handleError(err, response))
 }

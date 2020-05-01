@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
-  <%- include('../layouts/head') %>
+<%- include('../layouts/head') %>
+
 <body id="saved-page">
   <%- include('../layouts/header') %>
 
@@ -9,71 +10,69 @@
   <p>Your Saved Meal Plans</p>
   <p>Saved Meal Plans <%= plansSaved %></p>
   <% result.forEach(mealPlan => { %>
-  <div>
-  <li class="">Combined Meal Calories: <%= mealPlan.calories %></li>
-  <li class="">Combined Meal Protein: <%= mealPlan.protein %></li>
-  <li class="">Combined Meal Fat: <%= mealPlan.fat %></li>
-  <li class="">Combined Meal carbohydrates: <%= mealPlan.carbohydrates %></li>
-  
-  </div>
 
   <br>
   <br>
 
   <ul id="meals-container">
-  
-  <div class="meals">
-  <li class="img"><img src='<%= mealPlan.image %>' /></li>
-  <li class="">Meal Name: <%= mealPlan.title %></li>
-  <li class="">Time to Prepare: <%= mealPlan.readyInMinutes %> minutes</li>
-  
-  </div>
-  
-  <br>
-  <br>
+    <div>
+      <li class="">Combined Meal Calories: <%= mealPlan.calories %></li>
+      <li class="">Combined Meal Protein: <%= mealPlan.protein %></li>
+      <li class="">Combined Meal Fat: <%= mealPlan.fat %></li>
+      <li class="">Combined Meal carbohydrates: <%= mealPlan.carbohydrates %></li>
+
+    </div>
+
+    <div class="meals">
+      <li class="img"><img src='<%= mealPlan.image[0] %>' /></li>
+      <li class="">Meal Name: <%= mealPlan.title[1] %></li>
+      <li class="">Time to Prepare: <%= mealPlan.readyInMinutes %> minutes</li>
+
+    </div>
+
+    <br>
+    <br>
   </ul>
 
   <ul>
 
-    <div >
+    <div>
 
-    <li class="">Ingredient <%= mealPlan.name %></li>
-    <li class="">Amount: <%= mealPlan.value %></li>
-    <li class=""><%= mealPlan.unit %></li>
+      <li class="">Ingredient <%= mealPlan.name[0] %></li>
+      <li class="">Amount: <%= mealPlan.value[0] %></li>
+      <li class=""><%= mealPlan.unit[0] %></li>
 
     </div>
 
   </ul>
-  
+
   <section>
 
-      <section>
-      
+    <section>
 
-          <form action="/delete/<%= user_id %>" method="post">
-            <% console.log(mealPlan.id) %>
-            <input type="hidden" name="_method" value="DELETE">
-            
-              <input type="hidden" name="calories" value="<%= mealPlan.calories %>">
-              <input type="hidden"  name="protein" value="<%= mealPlan.protein %>">
-              <input type="hidden" name="fat"  value="<%= mealPlan.fat %>">
-              <input type="hidden" name="carbohydrates" value="<%= mealPlan.carbohydrates %>">   
-            
-              <input type="hidden" name="image" value="<%= mealPlan.image %>">
-              <input type="hidden" name="title" value="<%= mealPlan.title %>">
-              <input type="hidden" name="readyInMinutes" value="<%= mealPlan.readyInMinutes %>">
 
-              <input type="hidden" name="name" value="<%= mealPlan.name %>">
-              <input type="hidden" name="value" value="<%= mealPlan.value %>">
-              <input type="hidden" name="unit" value="<%= mealPlan.unit %>">
-             
-            <button class="btn btn-primary loginButton" type="submit" id="" >Delete Meal Plan</button>
-          </form>
-        </section>
-        <% }); %>
-  <%- include('../layouts/footer') %>
+      <form action="/delete/<%= user_id %>" method="post">
+        <% console.log(mealPlan.id) %>
+        <input type="hidden" name="_method" value="DELETE">
+
+        <input type="hidden" name="calories" value="<%= mealPlan.calories %>">
+        <input type="hidden" name="protein" value="<%= mealPlan.protein %>">
+        <input type="hidden" name="fat" value="<%= mealPlan.fat %>">
+        <input type="hidden" name="carbohydrates" value="<%= mealPlan.carbohydrates %>">
+
+        <input type="hidden" name="image" value="<%= mealPlan.image %>">
+        <input type="hidden" name="title" value="<%= mealPlan.title %>">
+        <input type="hidden" name="readyInMinutes" value="<%= mealPlan.readyInMinutes %>">
+
+        <input type="hidden" name="name" value="<%= mealPlan.name %>">
+        <input type="hidden" name="value" value="<%= mealPlan.value %>">
+        <input type="hidden" name="unit" value="<%= mealPlan.unit %>">
+
+        <button class="btn btn-primary loginButton" type="submit" id="">Delete Meal Plan</button>
+      </form>
+    </section>
+    <% }); %>
+    <%- include('../layouts/footer') %>
 </body>
+
 </html>
-
-
-  
