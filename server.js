@@ -13,7 +13,9 @@ const PORT = process.env.PORT;
 
 const client = new pg.Client(process.env.DATABASE_URL);
 
-client.connect();
+client.connect()
+  .then(app.listen(PORT, () => console.log(`kCal is up on ${PORT}`)));
+
 client.on('error', err => console.log(err));
 
 app.use(express.urlencoded({ extended: true }));
@@ -42,8 +44,6 @@ app.put('/my-dashboard/:user_id', updateMetrics);
 
 app.get('*', (request, response) => response.status(404).send('This route does not exist'));
 
-app.get('*', (request, response) => response.status(404).send('This route does not exist'));
-app.listen(PORT, () => console.log(`        😀    🥶      🤬                                       Listening on port: ${PORT}         🤯           🌕         🌈         💦              ✊`));
 
 function addUser(request, response) {
   let { firstname, lastname, username } = request.body;
