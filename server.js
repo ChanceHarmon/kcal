@@ -212,19 +212,35 @@ function Meal(newMeal) {
 
 
 function searchRecipe(data) {
+  console.log('in recipe', data)
   let id = data.idArray;
-
-  for (let i = 0; i <= 3; i++) {
-
+  for (let i = 0; i < id.length; i++) {
+    console.log(id[i])
     return superagent.get(`https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/${id[i]}/ingredientWidget.json`)
       .set('X-RapidAPI-Host', 'spoonacular-recipe-food-nutrition-v1.p.rapidapi.com')
       .set('X-RapidAPI-Key', `${process.env.X_RAPID_API_KEY}`)
 
       .then(apiResponse => {
-
+        console.log(apiResponse.body.ingredients)
         let ingredients = apiResponse.body.ingredients.map(recResult => new Recipe(recResult));
-        console.log(ingredients)
+        console.log('226', ingredients)
         return [ingredients, data];
+      })
+  }
+}
+
+function searchNutrition(data) {
+  let id = data.idArray;
+  console.log('nutrition id', id);
+  for (let i = 0; i < id.length; i++) {
+
+
+    return superagent.get(`https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/${id[i]}/nutritionWidget.json`)
+      .set('X-RapidAPI-Host', 'spoonacular-recipe-food-nutrition-v1.p.rapidapi.com')
+      .set('X-RapidAPI-Key', `${process.env.X_RAPID_API_KEY}`)
+      .then(apiResponse => {
+        console.log('after nutrition call', data, apiResponse.body)
+        return data
       })
   }
 }
@@ -244,17 +260,23 @@ let searchNewMeals = function (request, response) {
       data.meals = apiResponse.body.meals.map(mealResult => new Meal(mealResult));
       data.nutrients = apiResponse.body.nutrients;
       data.idArray = data.meals.map((meal) => meal.id);
+      console.log('data', data)
       return data;
     })
-    .then(result => searchRecipe(result)
-    )
+    // .then(result => {
+    //   console.log(result)
+    //   searchNutrition(result)
+    // })
+    .then(result => searchRecipe(result))
     .then(result => {
+      console.log('resultresult')
       let userObj = result[1];
       userObj.ingredients = result[0];
       return userObj;
     })
     .then(result => {
       let { meals, nutrients, ingredients } = result;
+      console.log('meals', meals, 'nutri', nutrients, 'ingredi', ingredients)
       response.render('pages/my-dashboard', { metrics: metrics, meals: meals, nutrients: nutrients, projDate: projDate, plan: plan, ingredients: ingredients, user_id: request.params.user_id })
     })
     .catch(err => handleError(err));
@@ -264,9 +286,8 @@ let searchNewMeals = function (request, response) {
 
 function saveMetricsToDB(request, response) {
   let user = request.params.user_id;
-  console.log(user)
+  //console.log(user)
   if (user) {
-    console.log('user')
     return updateMetrics(request, response);
   } else {
     let { age, height, sex, weight, getActivity, goal, loss } = request.body;
@@ -312,7 +333,7 @@ function saveMealPlanToDB(request, response) {
 
 
   let { calories, protein, fat, carbohydrates, image, title, readyInMinutes, name, value, unit } = request.body;
-  console.log(request.body)
+  //console.log(request.body)
 
   const SQL = 'INSERT INTO meals (calories, protein, fat, carbohydrates, image, title, readyInMinutes, name, value, unit, users_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);';
   const values = [calories, protein, fat, carbohydrates, image, title, readyInMinutes, name, value, unit, request.params.user_id];
@@ -335,7 +356,7 @@ function saveMealPlanToDB(request, response) {
 function deleteMeal(request, response) {
   const SQL = 'DELETE FROM meals WHERE id=$1;';
   const value = [request.params.user_id];
-  console.log(SQL, value)
+  //console.log(SQL, value)
   client.query(SQL, value)
     .then(response.redirect('/saved-menus'))
     .catch(error => handleError(error, response));
