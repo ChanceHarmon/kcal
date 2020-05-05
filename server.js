@@ -211,30 +211,37 @@ function Meal(newMeal) {
 }
 
 
-function searchRecipe(data) {
-  console.log('in recipe', data)
+//These two functions were a way to get the code to stop long enough to get the ingridients for all three meals before hitting the next .then in the search recipes function. After doing the research on the api call to mealPlans, they have no other parameters in the url other than calories, so you can't really data mine in the first request.
+
+function delay() {
+  return new Promise(resolve => setTimeout(resolve, 1000));
+}
+async function delayedLog(item) {
+  await delay();
+}
+
+
+async function searchRecipe(data) {
+  console.log('in recipe')
+  let ingredients = [];
   let id = data.idArray;
   for (let i = 0; i < id.length; i++) {
     console.log(id[i])
-    return superagent.get(`https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/${id[i]}/ingredientWidget.json`)
-      .set('X-RapidAPI-Host', 'spoonacular-recipe-food-nutrition-v1.p.rapidapi.com')
-      .set('X-RapidAPI-Key', `${process.env.X_RAPID_API_KEY}`)
-
-      .then(apiResponse => {
-        console.log(apiResponse.body.ingredients)
-        let ingredients = apiResponse.body.ingredients.map(recResult => new Recipe(recResult));
-        console.log('226', ingredients)
-        return [ingredients, data];
-      })
+    await delayedLog(
+      superagent.get(`https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/${id[i]}/ingredientWidget.json`)
+        .set('X-RapidAPI-Host', 'spoonacular-recipe-food-nutrition-v1.p.rapidapi.com')
+        .set('X-RapidAPI-Key', `${process.env.X_RAPID_API_KEY}`)
+        .then(apiResponse => {
+          ingredients.push(apiResponse.body.ingredients.map(recResult => new Recipe(recResult)));
+        }))
   }
+  return [ingredients, data];
 }
 
 function searchNutrition(data) {
   let id = data.idArray;
   console.log('nutrition id', id);
   for (let i = 0; i < id.length; i++) {
-
-
     return superagent.get(`https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/${id[i]}/nutritionWidget.json`)
       .set('X-RapidAPI-Host', 'spoonacular-recipe-food-nutrition-v1.p.rapidapi.com')
       .set('X-RapidAPI-Key', `${process.env.X_RAPID_API_KEY}`)
@@ -260,7 +267,6 @@ let searchNewMeals = function (request, response) {
       data.meals = apiResponse.body.meals.map(mealResult => new Meal(mealResult));
       data.nutrients = apiResponse.body.nutrients;
       data.idArray = data.meals.map((meal) => meal.id);
-      console.log('data', data)
       return data;
     })
     // .then(result => {
@@ -269,7 +275,7 @@ let searchNewMeals = function (request, response) {
     // })
     .then(result => searchRecipe(result))
     .then(result => {
-      console.log('resultresult')
+      console.log('result after recipe', result)
       let userObj = result[1];
       userObj.ingredients = result[0];
       return userObj;
@@ -286,7 +292,7 @@ let searchNewMeals = function (request, response) {
 
 function saveMetricsToDB(request, response) {
   let user = request.params.user_id;
-  //console.log(user)
+
   if (user) {
     return updateMetrics(request, response);
   } else {
@@ -356,7 +362,6 @@ function saveMealPlanToDB(request, response) {
 function deleteMeal(request, response) {
   const SQL = 'DELETE FROM meals WHERE id=$1;';
   const value = [request.params.user_id];
-  //console.log(SQL, value)
   client.query(SQL, value)
     .then(response.redirect('/saved-menus'))
     .catch(error => handleError(error, response));
