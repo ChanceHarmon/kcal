@@ -193,9 +193,15 @@ function goalDate(request) {
   }
 }
 
+function Nutrition(meal) {
+  this.calories = meal.calories;
+  this.carbs = meal.carbs;
+  this.fat = meal.fat;
+  this.protein = meal.protein;
+}
+
 
 function Recipe(newRec) {
-
   this.name = newRec.name;
   this.value = newRec.amount.us.value;
   this.unit = newRec.amount.us.unit;
@@ -216,7 +222,7 @@ function Meal(newMeal) {
 function delay() {
   return new Promise(resolve => setTimeout(resolve, 1000));
 }
-async function delayedLog(item) {
+async function delayedLog() {
   await delay();
 }
 
@@ -238,18 +244,24 @@ async function searchRecipe(data) {
   return [ingredients, data];
 }
 
-function searchNutrition(data) {
+//This function is working perfectly, I just am not setup on the front end yet to use it.
+
+async function searchNutrition(data) {
+  console.log('in nutrients')
+  let nutrition = [];
   let id = data.idArray;
-  console.log('nutrition id', id);
+
   for (let i = 0; i < id.length; i++) {
-    return superagent.get(`https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/${id[i]}/nutritionWidget.json`)
-      .set('X-RapidAPI-Host', 'spoonacular-recipe-food-nutrition-v1.p.rapidapi.com')
-      .set('X-RapidAPI-Key', `${process.env.X_RAPID_API_KEY}`)
-      .then(apiResponse => {
-        console.log('after nutrition call', data, apiResponse.body)
-        return data
-      })
+    await delayedLog(
+      superagent.get(`https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/${id[i]}/nutritionWidget.json`)
+        .set('X-RapidAPI-Host', 'spoonacular-recipe-food-nutrition-v1.p.rapidapi.com')
+        .set('X-RapidAPI-Key', `${process.env.X_RAPID_API_KEY}`)
+        .then(apiResponse => {
+          let eachMeal = new Nutrition(apiResponse.body)
+          nutrition.push(eachMeal)
+        }))
   }
+  return data;
 }
 
 let searchNewMeals = function (request, response) {
@@ -269,10 +281,7 @@ let searchNewMeals = function (request, response) {
       data.idArray = data.meals.map((meal) => meal.id);
       return data;
     })
-    // .then(result => {
-    //   console.log(result)
-    //   searchNutrition(result)
-    // })
+    .then(result => searchNutrition(result))
     .then(result => searchRecipe(result))
     .then(result => {
       console.log('result after recipe', result)
