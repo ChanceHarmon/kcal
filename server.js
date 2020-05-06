@@ -239,7 +239,7 @@ async function searchRecipe(data) {
         .set('X-RapidAPI-Key', `${process.env.X_RAPID_API_KEY}`)
         .then(apiResponse => {
           ingredients.push(apiResponse.body.ingredients.map(recResult => new Recipe(recResult)));
-        }))
+        })).catch(error => handleError(error, response));
   }
   return [ingredients, data];
 }
@@ -259,7 +259,7 @@ async function searchNutrition(data) {
         .then(apiResponse => {
           let eachMeal = new Nutrition(apiResponse.body)
           nutrition.push(eachMeal)
-        }))
+        })).catch(error => handleError(error, response));
   }
   return data;
 }
@@ -347,8 +347,8 @@ function saveMealPlanToDB(request, response) {
 
 
 
+  console.log(request.body)
   let { calories, protein, fat, carbohydrates, image, title, readyInMinutes, name, value, unit } = request.body;
-  //console.log(request.body)
 
   const SQL = 'INSERT INTO meals (calories, protein, fat, carbohydrates, image, title, readyInMinutes, name, value, unit, users_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);';
   const values = [calories, protein, fat, carbohydrates, image, title, readyInMinutes, name, value, unit, request.params.user_id];

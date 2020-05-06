@@ -147,3 +147,6 @@
   position: absolute;
 }
 
+#meal-id {
+  display: none;
+}

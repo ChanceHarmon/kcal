@@ -107,7 +107,7 @@
         </li>
       </div>
     </div>
-    <%  %>
+
 
     <br>
     <br>
@@ -115,6 +115,7 @@
     <ul id="meals-container">
       <% meals.forEach(meal => { %>
       <div class="meals">
+        <li meal-id="<%= meal.id %>" </li>
         <li class="img"><img src='<%= meal.image %>' /></li>
         <li class="">Meal Name:
           <%= meal.title %>
@@ -122,17 +123,13 @@
         <li class="">Time to Prepare:
           <%= meal.readyInMinutes %> minutes
         </li>
-      </div>
-      <% }); %>
-      <!-- 
-       <div class="ingredients">
-    
-      <% ingredients.forEach(ingr => { %>
+        <% ingredients.forEach(ingr => { %>
         <li class="">Ingredient <%= ingr.name %></li>
         <li class="">Amount: <%= ingr.value %></li>
         <li class=""><%= ingr.unit %></li>
+        <% }); %>
+        <% }); %>
       </div>
-        <% }); %>   -->
     </ul>
 
     <section>
@@ -143,17 +140,17 @@
         <input type="hidden" name="protein" value="<%= nutrients.protein %>">
         <input type="hidden" name="fat" value="<%= nutrients.fat %>">
         <input type="hidden" name="carbohydrates" value="<%= nutrients.carbohydrates %>">
-        <%  %>
-        <% meals.forEach(meal => { %>
-        <input type="hidden" name="image" value="<%= meal.image %>">
-        <input type="hidden" name="title" value="<%= meal.title %>">
-        <input type="hidden" name="readyInMinutes" value="<%= meal.readyInMinutes %>">
-        <% }); %>
-        <% ingredients.forEach(ingr => { %>
-        <input type="hidden" name="name" value="<%= ingr.name %>">
-        <input type="hidden" name="value" value="<%= ingr.value %>">
-        <input type="hidden" name="unit" value="<%= ingr.unit %>">
-        <% }); %>
+        <% meals %>
+
+        <input type="hidden" name="image" value="<%= meals.image %>">
+        <input type="hidden" name="title" value="<%= meals.title %>">
+        <input type="hidden" name="readyInMinutes" value="<%= meals.readyInMinutes %>">
+
+        <% ingredients %>
+        <input type="hidden" name="name" value="<%= ingredients.name %>">
+        <input type="hidden" name="value" value="<%= ingredients.value %>">
+        <input type="hidden" name="unit" value="<%= ingredients.unit %>">
+
 
       </form>
     </section>
