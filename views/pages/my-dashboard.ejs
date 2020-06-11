@@ -12,11 +12,11 @@
       </h1>
 
       <p>You will reach your goal weight around
-        <p class="diet-values"><b><%= projDate %></b></p>
-        <br>
-        We have generated your meal plan for the day according to your current body metrics and diet plan. Every 7 days
-        update your
-        new weight to adjust your meal plan, and feel free to change your diet plan to slow or fast-track your results.
+      <p class="diet-values"><b><%= projDate %></b></p>
+      <br>
+      We have generated your meal plan for the day according to your current body metrics and diet plan. Every 7 days
+      update your
+      new weight to adjust your meal plan, and feel free to change your diet plan to slow or fast-track your results.
       </p>
       <button id="update-button" type="button" class="showButton" form="hiddenForm" name="hiddenForm">Update
         Plan</button>
@@ -91,19 +91,19 @@
     <div id="daily-meal">
       <p>Your daily meal plan is designed to fit your diet plan based on your caloric needs to achieve your goal weight.
       </p>
-      <% nutrients  %>
+      <% console.log('front end', totalNutrients) %>
       <div id="combined">
         <li class="">Combined Meal Calories:
-          <p class="diet-values"><b><%= nutrients.calories %>g</b></p>
+          <p class="diet-values"><b><%= totalNutrients.calories %>g</b></p>
         </li>
         <li class="">Combined Meal Protein:
-          <p class="diet-values"><b><%= nutrients.protein %>g</b></p>
+          <p class="diet-values"><b><%= totalNutrients.protein %>g</b></p>
         </li>
         <li class="">Combined Meal Fat:
-          <p class="diet-values"><b><%= nutrients.fat %>g</b></p>
+          <p class="diet-values"><b><%= totalNutrients.fat %>g</b></p>
         </li>
         <li class="">Combined Meal carbohydrates:
-          <p class="diet-values"><b><%= nutrients.carbohydrates %>g</b></p>
+          <p class="diet-values"><b><%= totalNutrients.carbs %>g</b></p>
         </li>
       </div>
     </div>
@@ -123,7 +123,7 @@
         <li class="">Time to Prepare:
           <%= meal.readyInMinutes %> minutes
         </li>
-        <% ingredients.forEach(ingr => { %>
+        <% meal.ingredients.forEach(ingr => { %>
         <li class="">Ingredient <%= ingr.name %></li>
         <li class="">Amount: <%= ingr.value %></li>
         <li class=""><%= ingr.unit %></li>
@@ -132,28 +132,36 @@
       </div>
     </ul>
 
+    <% meals.forEach(meal => { %>
     <section>
       <form action="/saved-menus/<%= user_id %>" method="post" id="" class="save">
 
-        <% nutrients  %>
-        <input type="hidden" name="calories" value="<%= nutrients.calories %>">
-        <input type="hidden" name="protein" value="<%= nutrients.protein %>">
-        <input type="hidden" name="fat" value="<%= nutrients.fat %>">
-        <input type="hidden" name="carbohydrates" value="<%= nutrients.carbohydrates %>">
-        <% meals %>
+        <% meal.nutrients  %>
+        <input type="hidden" name="calories" value="<%= meal.nutrients[0].amount %>">
+        <input type="hidden" name="protein" value="<%= meal.nutrients.protein %>">
+        <input type="hidden" name="fat" value="<%= meal.nutrients[1].amount %>">
+        <input type="hidden" name="carbohydrates" value="<%= meal.nutrients[3].amount %>">
+        <% meal %>
 
-        <input type="hidden" name="image" value="<%= meals.image %>">
-        <input type="hidden" name="title" value="<%= meals.title %>">
-        <input type="hidden" name="readyInMinutes" value="<%= meals.readyInMinutes %>">
+        <input type="hidden" name="image" value="<%= meal.image %>">
+        <input type="hidden" name="title" value="<%= meal.title %>">
+        <input type="hidden" name="readyInMinutes" value="<%= meal.readyInMinutes %>">
 
-        <% ingredients %>
-        <input type="hidden" name="name" value="<%= ingredients.name %>">
-        <input type="hidden" name="value" value="<%= ingredients.value %>">
-        <input type="hidden" name="unit" value="<%= ingredients.unit %>">
+        <% meal.ingredients %>
+        <% meal.ingredients.forEach( ingr => { %>
+        <% console.log('ingr', ingr) %>
+        <input type="hidden" name="name" value="<%= ingr.name %>">
+        <input type="hidden" name="value" value="<%= ingr.value %>">
+        <input type="hidden" name="unit" value="<%= ingr.unit %>">
+
+
+
+        <% }) %>
 
 
       </form>
     </section>
+    <% }) %>
     <div id="dashboard-save-button">
       <button class="btn btn-primary loginButton" type="submit">Save Plan</button>
     </div>

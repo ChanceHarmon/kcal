@@ -207,13 +207,18 @@ function Recipe(newRec) {
   this.unit = newRec.amount.us.unit;
 }
 
-function Meal(newMeal) {
+function Meal(meal) {
   const placeholderImage = 'https://i.imgur.com/J5LVHEL.jpg';
-  this.id = newMeal.id ? newMeal.id : 'No id available';
-  this.title = newMeal.title ? newMeal.title : 'No title available';
-  this.readyInMinutes = newMeal.readyInMinutes ? newMeal.readyInMinutes : 'No info available';
-  this.servings = newMeal.servings ? newMeal.servings : 'No info available';
-  this.image = `https://spoonacular.com/recipeImages/${newMeal.image}` ? `https://spoonacular.com/recipeImages/${newMeal.id}-312x231.jpg` : placeholderImage;
+  this.id = meal.id ? meal.id : 'No id available';
+  this.title = meal.title ? meal.title : 'No title available';
+  this.readyInMinutes = meal.readyInMinutes ? meal.readyInMinutes : 'No info available';
+  this.servings = meal.servings ? meal.servings : 'No info available';
+  this.image = `https://spoonacular.com/recipeImages/${meal.image}` ? `https://spoonacular.com/recipeImages/${meal.id}-312x231.jpg` : placeholderImage;
+  this.nutrients = meal.nutrition.nutrients;
+  this.ingredients = meal.nutrition.ingredients;
+  this.summary = meal.summary;
+  this.dishType = meal.dishTypes;
+  this.instructions = meal.instructions;
 }
 
 
@@ -264,40 +269,71 @@ async function searchNutrition(data) {
   return data;
 }
 
+async function createMeals(data) {
+  //console.log('data', data)
+  let mealsArray = [];
+  for (let i = 0; i < data.idArray.length; i++) {
+    await delayedLog(
+      superagent.get(`https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/${data.idArray[i]}/information?includeNutrition=true`)
+        .set('X-RapidAPI-Host', 'spoonacular-recipe-food-nutrition-v1.p.rapidapi.com')
+        .set('X-RapidAPI-Key', `${process.env.X_RAPID_API_KEY}`)
+        .then(result => {
+          mealsArray.push(new Meal(result.body))
+        }))
+  }
+  data.meals = mealsArray;
+  console.log('data meals in async', data.meals)
+  return data
+}
+
 let searchNewMeals = function (request, response) {
   let metrics = request.body
   let calories = getBmr(request, response);
+  console.log('calories', calories)
   let projDate = goalDate(request, response);
   let plan = request.body.loss;
 
-  superagent.get(`https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/mealplans/generate?targetCalories=${calories}&timeFrame=day`)
+  superagent.get(`https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/findByNutrients?maxCalories=${calories}&number=3`)
     .set('X-RapidAPI-Host', 'spoonacular-recipe-food-nutrition-v1.p.rapidapi.com')
     .set('X-RapidAPI-Key', `${process.env.X_RAPID_API_KEY}`)
 
     .then(apiResponse => {
-      let data = {};
-      data.meals = apiResponse.body.meals.map(mealResult => new Meal(mealResult));
-      data.nutrients = apiResponse.body.nutrients;
-      data.idArray = data.meals.map((meal) => meal.id);
-      return data;
-    })
-    .then(result => searchNutrition(result))
-    .then(result => searchRecipe(result))
-    .then(result => {
-      console.log('result after recipe', result)
-      let userObj = result[1];
-      userObj.ingredients = result[0];
-      return userObj;
-    })
-    .then(result => {
-      let { meals, nutrients, ingredients } = result;
-      console.log('meals', meals, 'nutri', nutrients, 'ingredi', ingredients)
-      response.render('pages/my-dashboard', { metrics: metrics, meals: meals, nutrients: nutrients, projDate: projDate, plan: plan, ingredients: ingredients, user_id: request.params.user_id })
-    })
-    .catch(err => handleError(err));
+      let data = {}
+      data.idArray = [];
+      data.totalNutrients = {};
+      data.totalNutrients.calories = 0;
+      data.totalNutrients.protein = 0;
+      data.totalNutrients.fat = 0;
+      data.totalNutrients.carbs = 0;
+      //console.log('api response', apiResponse.body)
+      apiResponse.body.forEach(value => {
+        data.idArray.push(value.id)
+        data.totalNutrients.calories += value.calories;
+        data.totalNutrients.protein += parseFloat(value.protein.slice(0, -1));
+        data.totalNutrients.fat += parseFloat(value.fat.slice(0, -1));
+        data.totalNutrients.carbs += parseFloat(value.carbs.slice(0, -1));
+        //console.log(data.totalNutrients)
+      })
+      //console.log(data.idArray)
+      return data
+    }).then(data =>
+      createMeals(data)
+    )
+    .then(data => {
+
+      // console.log('final', data)
+
+      let { meals, totalNutrients } = data;
+      //console.log('meals', meals)
+      console.log('totalNutrients', totalNutrients)
+      response.render('pages/my-dashboard', { metrics: metrics, meals: meals, totalNutrients: totalNutrients, projDate: projDate, plan: plan, user_id: request.params.user_id })
+      //let { meals, nutrients, ingredients } = result;
+      //     console.log('meals', meals, 'nutri', nutrients, 'ingredi', ingredients)
+      //     response.render('pages/my-dashboard', { metrics: metrics, meals: meals, nutrients: nutrients, projDate: projDate, plan: plan, ingredients: ingredients, user_id: request.params.user_id })
+
+    }).catch(err => handleError(err));
+
 }
-
-
 
 function saveMetricsToDB(request, response) {
   let user = request.params.user_id;
