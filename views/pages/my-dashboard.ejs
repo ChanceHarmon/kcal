@@ -91,10 +91,10 @@
     <div id="daily-meal">
       <p>Your daily meal plan is designed to fit your diet plan based on your caloric needs to achieve your goal weight.
       </p>
-      <% console.log('front end', totalNutrients) %>
+
       <div id="combined">
         <li class="">Combined Meal Calories:
-          <p class="diet-values"><b><%= totalNutrients.calories %>g</b></p>
+          <p class="diet-values"><b><%= totalNutrients.calories %></b></p>
         </li>
         <li class="">Combined Meal Protein:
           <p class="diet-values"><b><%= totalNutrients.protein %>g</b></p>
@@ -125,7 +125,7 @@
         </li>
         <% meal.ingredients.forEach(ingr => { %>
         <li class="">Ingredient <%= ingr.name %></li>
-        <li class="">Amount: <%= ingr.value %></li>
+        <li class="">Amount: <%= ingr.amount %></li>
         <li class=""><%= ingr.unit %></li>
         <% }); %>
         <% }); %>
@@ -149,9 +149,9 @@
 
         <% meal.ingredients %>
         <% meal.ingredients.forEach( ingr => { %>
-        <% console.log('ingr', ingr) %>
+
         <input type="hidden" name="name" value="<%= ingr.name %>">
-        <input type="hidden" name="value" value="<%= ingr.value %>">
+        <input type="hidden" name="value" value="<%= ingr.amount %>">
         <input type="hidden" name="unit" value="<%= ingr.unit %>">
 
 

@@ -70,6 +70,7 @@ function addUser(request, response) {
 
   client.query(userExist, values1)
     .then(results => {
+      console.log('add user', results)
       if (results.rows.length > 0) {
         response.render('pages/join');
 
@@ -232,42 +233,6 @@ async function delayedLog() {
 }
 
 
-async function searchRecipe(data) {
-  console.log('in recipe')
-  let ingredients = [];
-  let id = data.idArray;
-  for (let i = 0; i < id.length; i++) {
-    console.log(id[i])
-    await delayedLog(
-      superagent.get(`https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/${id[i]}/ingredientWidget.json`)
-        .set('X-RapidAPI-Host', 'spoonacular-recipe-food-nutrition-v1.p.rapidapi.com')
-        .set('X-RapidAPI-Key', `${process.env.X_RAPID_API_KEY}`)
-        .then(apiResponse => {
-          ingredients.push(apiResponse.body.ingredients.map(recResult => new Recipe(recResult)));
-        })).catch(error => handleError(error, response));
-  }
-  return [ingredients, data];
-}
-
-//This function is working perfectly, I just am not setup on the front end yet to use it.
-
-async function searchNutrition(data) {
-  console.log('in nutrients')
-  let nutrition = [];
-  let id = data.idArray;
-
-  for (let i = 0; i < id.length; i++) {
-    await delayedLog(
-      superagent.get(`https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/${id[i]}/nutritionWidget.json`)
-        .set('X-RapidAPI-Host', 'spoonacular-recipe-food-nutrition-v1.p.rapidapi.com')
-        .set('X-RapidAPI-Key', `${process.env.X_RAPID_API_KEY}`)
-        .then(apiResponse => {
-          let eachMeal = new Nutrition(apiResponse.body)
-          nutrition.push(eachMeal)
-        })).catch(error => handleError(error, response));
-  }
-  return data;
-}
 
 async function createMeals(data) {
   //console.log('data', data)
@@ -278,25 +243,30 @@ async function createMeals(data) {
         .set('X-RapidAPI-Host', 'spoonacular-recipe-food-nutrition-v1.p.rapidapi.com')
         .set('X-RapidAPI-Key', `${process.env.X_RAPID_API_KEY}`)
         .then(result => {
+          console.log('meals array', mealsArray)
+          //console.log('result.body', result.body.nutrition.ingredients)
           mealsArray.push(new Meal(result.body))
         }))
   }
   data.meals = mealsArray;
-  console.log('data meals in async', data.meals)
+  //console.log('data meals in async', data.meals)
   return data
 }
-
+let previousMeals = [];
 let searchNewMeals = function (request, response) {
   let metrics = request.body
   let calories = getBmr(request, response);
-  console.log('calories', calories)
+  //console.log('calories', calories)
   let projDate = goalDate(request, response);
   let plan = request.body.loss;
+  console.log('metrics in search', metrics, 'and calories', calories, 'and proj', projDate)
 
-  superagent.get(`https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/findByNutrients?maxCalories=${calories}&number=3`)
+  let url = `https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/findByNutrients?maxCalories=${calories}&number=3`
+
+  console.log('url', url)
+  superagent.get(url)
     .set('X-RapidAPI-Host', 'spoonacular-recipe-food-nutrition-v1.p.rapidapi.com')
     .set('X-RapidAPI-Key', `${process.env.X_RAPID_API_KEY}`)
-
     .then(apiResponse => {
       let data = {}
       data.idArray = [];
@@ -307,7 +277,13 @@ let searchNewMeals = function (request, response) {
       data.totalNutrients.carbs = 0;
       //console.log('api response', apiResponse.body)
       apiResponse.body.forEach(value => {
+        //if (previousMeals[0] === value.id) {
+        // searchNewMeals(request)
+        //} else {
+        console.log(previousMeals, 'previous')
+        previousMeals.push(value.id)
         data.idArray.push(value.id)
+        //}
         data.totalNutrients.calories += value.calories;
         data.totalNutrients.protein += parseFloat(value.protein.slice(0, -1));
         data.totalNutrients.fat += parseFloat(value.fat.slice(0, -1));
@@ -325,39 +301,50 @@ let searchNewMeals = function (request, response) {
 
       let { meals, totalNutrients } = data;
       //console.log('meals', meals)
-      console.log('totalNutrients', totalNutrients)
+      //console.log('totalNutrients', totalNutrients)
       response.render('pages/my-dashboard', { metrics: metrics, meals: meals, totalNutrients: totalNutrients, projDate: projDate, plan: plan, user_id: request.params.user_id })
-      //let { meals, nutrients, ingredients } = result;
-      //     console.log('meals', meals, 'nutri', nutrients, 'ingredi', ingredients)
-      //     response.render('pages/my-dashboard', { metrics: metrics, meals: meals, nutrients: nutrients, projDate: projDate, plan: plan, ingredients: ingredients, user_id: request.params.user_id })
-
     }).catch(err => handleError(err));
 
 }
 
 function saveMetricsToDB(request, response) {
   let user = request.params.user_id;
+  console.log('save metrics', request.body)
+  //Slect from metrics where userid = user
+  //if rows > 0  update metrics, else insert
 
-  if (user) {
-    return updateMetrics(request, response);
-  } else {
-    let { age, height, sex, weight, getActivity, goal, loss } = request.body;
+  let sqlCheck = 'SELECT * FROM metrics WHERE users_id =$1;'
+  let safeVal = [user];
+  client.query(sqlCheck, safeVal).then((result) => {
+    console.log('save result', result)
+    if (result.rowCount > 0) {
+      console.log('user', user)
+      return updateMetrics(request, response);
+    } else {
+      let { age, height, sex, weight, getActivity, goal, loss } = request.body;
+      console.log('actual metrics', age, height, sex)
+      let SQL = 'INSERT INTO metrics (age, height, sex, weight, getActivity, goal, loss, users_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);';
+      let values = [age, height, sex, weight, getActivity, goal, loss, request.params.user_id];
 
-    let SQL = 'INSERT INTO metrics (age, height, sex, weight, getActivity, goal, loss, users_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);';
-    let values = [age, height, sex, weight, getActivity, goal, loss, request.params.user_id];
+      return client.query(SQL, values)
+        .then(searchNewMeals(request, response))
+        .catch(err => handleError(err, response))
+    }
 
-    return client.query(SQL, values)
-      .then(searchNewMeals(request, response))
-      .catch(err => handleError(err, response))
-  }
+  })
+
 }
 
 function updateMetrics(request, response) {
   let { age, height, sex, weight, getActivity, goal, loss } = request.body;
+  console.log('now in update', request.body)
   let SQL = `UPDATE metrics SET age=$1, height=$2, sex=$3, weight=$4, getActivity=$5, goal=$6, loss=$7 WHERE id=$8;`;
   let updates = [age, height, sex, weight, getActivity, goal, loss, request.params.user_id];
   client.query(SQL, updates)
-    .then(searchNewMeals(request, response))
+    .then(() => {
+      console.log('before search in update')
+      searchNewMeals(request, response)
+    })
     .catch(err => handleError(err, response));
 }
 
