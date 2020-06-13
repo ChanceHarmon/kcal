@@ -93,17 +93,18 @@
       </p>
 
       <div id="combined">
+        <% console.log('front', totalNutrients) %>
         <li class="">Combined Meal Calories:
           <p class="diet-values"><b><%= totalNutrients.calories %></b></p>
         </li>
         <li class="">Combined Meal Protein:
-          <p class="diet-values"><b><%= totalNutrients.protein %>g</b></p>
+          <p class="diet-values"><b><%= totalNutrients.protein %> g</b></p>
         </li>
         <li class="">Combined Meal Fat:
-          <p class="diet-values"><b><%= totalNutrients.fat %>g</b></p>
+          <p class="diet-values"><b><%= totalNutrients.fat %> g</b></p>
         </li>
         <li class="">Combined Meal carbohydrates:
-          <p class="diet-values"><b><%= totalNutrients.carbs %>g</b></p>
+          <p class="diet-values"><b><%= totalNutrients.carbs %> g</b></p>
         </li>
       </div>
     </div>
@@ -124,9 +125,7 @@
           <%= meal.readyInMinutes %> minutes
         </li>
         <% meal.ingredients.forEach(ingr => { %>
-        <li class="">Ingredient <%= ingr.name %></li>
-        <li class="">Amount: <%= ingr.amount %></li>
-        <li class=""><%= ingr.unit %></li>
+        <li class="">Ingredient: <%= ingr.original %></li>
         <% }); %>
         <% }); %>
       </div>
@@ -146,22 +145,15 @@
         <input type="hidden" name="image" value="<%= meal.image %>">
         <input type="hidden" name="title" value="<%= meal.title %>">
         <input type="hidden" name="readyInMinutes" value="<%= meal.readyInMinutes %>">
-
         <% meal.ingredients %>
         <% meal.ingredients.forEach( ingr => { %>
-
-        <input type="hidden" name="name" value="<%= ingr.name %>">
-        <input type="hidden" name="value" value="<%= ingr.amount %>">
-        <input type="hidden" name="unit" value="<%= ingr.unit %>">
-
-
-
+        <input type="hidden" name="name" value="<%= ingr.original %>">
         <% }) %>
-
 
       </form>
     </section>
     <% }) %>
+
     <div id="dashboard-save-button">
       <button class="btn btn-primary loginButton" type="submit">Save Plan</button>
     </div>

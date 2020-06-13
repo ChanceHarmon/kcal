@@ -1,26 +1,22 @@
 'use strict';
 
 require('dotenv').config();
-
 const express = require('express');
 const superagent = require('superagent');
 const pg = require('pg');
 require('ejs');
 const methodOverride = require('method-override');
-
 const app = express();
 const PORT = process.env.PORT;
 
 const client = new pg.Client(process.env.DATABASE_URL);
-
-client.connect()
-  .then(app.listen(PORT, () => console.log(`kCal is up on ${PORT}`)));
-
 client.on('error', err => console.log(err));
+client.connect().then(app.listen(PORT, () => console.log(`kCal is up on ${PORT}`)));
+
+app.set('view engine', 'ejs');
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('./public'));
-
 app.use(methodOverride(function (request) {
   if (request.body && typeof request.body === 'object' && '_method' in request.body) {
     let method = request.body._method;
@@ -28,7 +24,6 @@ app.use(methodOverride(function (request) {
     return method;
   }
 }));
-app.set('view engine', 'ejs');
 
 app.get('/', createJoke);
 app.get('/about', aboutUs);
@@ -44,8 +39,6 @@ app.post('/saved-menus/:user_id', saveMealPlanToDB);
 app.delete('/delete/:user_id', deleteMeal);
 
 app.get('*', (request, response) => response.status(404).send('This route does not exist'));
-
-
 
 function createJoke(request, response) {
   superagent.get('https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/food/jokes/random')
@@ -194,20 +187,6 @@ function goalDate(request) {
   }
 }
 
-function Nutrition(meal) {
-  this.calories = meal.calories;
-  this.carbs = meal.carbs;
-  this.fat = meal.fat;
-  this.protein = meal.protein;
-}
-
-
-function Recipe(newRec) {
-  this.name = newRec.name;
-  this.value = newRec.amount.us.value;
-  this.unit = newRec.amount.us.unit;
-}
-
 function Meal(meal) {
   const placeholderImage = 'https://i.imgur.com/J5LVHEL.jpg';
   this.id = meal.id ? meal.id : 'No id available';
@@ -216,7 +195,7 @@ function Meal(meal) {
   this.servings = meal.servings ? meal.servings : 'No info available';
   this.image = `https://spoonacular.com/recipeImages/${meal.image}` ? `https://spoonacular.com/recipeImages/${meal.id}-312x231.jpg` : placeholderImage;
   this.nutrients = meal.nutrition.nutrients;
-  this.ingredients = meal.nutrition.ingredients;
+  this.ingredients = meal.extendedIngredients;
   this.summary = meal.summary;
   this.dishType = meal.dishTypes;
   this.instructions = meal.instructions;
@@ -235,7 +214,6 @@ async function delayedLog() {
 
 
 async function createMeals(data) {
-  //console.log('data', data)
   let mealsArray = [];
   for (let i = 0; i < data.idArray.length; i++) {
     await delayedLog(
@@ -243,27 +221,24 @@ async function createMeals(data) {
         .set('X-RapidAPI-Host', 'spoonacular-recipe-food-nutrition-v1.p.rapidapi.com')
         .set('X-RapidAPI-Key', `${process.env.X_RAPID_API_KEY}`)
         .then(result => {
-          console.log('meals array', mealsArray)
-          //console.log('result.body', result.body.nutrition.ingredients)
           mealsArray.push(new Meal(result.body))
         }))
   }
   data.meals = mealsArray;
-  //console.log('data meals in async', data.meals)
   return data
 }
 let previousMeals = [];
 let searchNewMeals = function (request, response) {
   let metrics = request.body
   let calories = getBmr(request, response);
-  //console.log('calories', calories)
+  console.log('calories', calories)
   let projDate = goalDate(request, response);
   let plan = request.body.loss;
-  console.log('metrics in search', metrics, 'and calories', calories, 'and proj', projDate)
+  let minCal = Math.round((calories - 500) / 3);
+  let maxCal = Math.round((calories) / 3);
 
-  let url = `https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/findByNutrients?maxCalories=${calories}&number=3`
+  let url = `https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/findByNutrients?minCalories=${minCal}&maxCalories=${maxCal}&random=true&number=3`
 
-  console.log('url', url)
   superagent.get(url)
     .set('X-RapidAPI-Host', 'spoonacular-recipe-food-nutrition-v1.p.rapidapi.com')
     .set('X-RapidAPI-Key', `${process.env.X_RAPID_API_KEY}`)
@@ -275,7 +250,7 @@ let searchNewMeals = function (request, response) {
       data.totalNutrients.protein = 0;
       data.totalNutrients.fat = 0;
       data.totalNutrients.carbs = 0;
-      //console.log('api response', apiResponse.body)
+      //console.log('api response', apiResponse.body.recipes[0].extendedIngredients)
       apiResponse.body.forEach(value => {
         //if (previousMeals[0] === value.id) {
         // searchNewMeals(request)
@@ -284,45 +259,31 @@ let searchNewMeals = function (request, response) {
         previousMeals.push(value.id)
         data.idArray.push(value.id)
         //}
+        //console.log(value)
         data.totalNutrients.calories += value.calories;
         data.totalNutrients.protein += parseFloat(value.protein.slice(0, -1));
         data.totalNutrients.fat += parseFloat(value.fat.slice(0, -1));
         data.totalNutrients.carbs += parseFloat(value.carbs.slice(0, -1));
-        //console.log(data.totalNutrients)
+        console.log(data.totalNutrients)
       })
-      //console.log(data.idArray)
       return data
     }).then(data =>
       createMeals(data)
-    )
-    .then(data => {
-
-      // console.log('final', data)
-
+    ).then(data => {
       let { meals, totalNutrients } = data;
-      //console.log('meals', meals)
-      //console.log('totalNutrients', totalNutrients)
       response.render('pages/my-dashboard', { metrics: metrics, meals: meals, totalNutrients: totalNutrients, projDate: projDate, plan: plan, user_id: request.params.user_id })
     }).catch(err => handleError(err));
-
 }
 
 function saveMetricsToDB(request, response) {
   let user = request.params.user_id;
-  console.log('save metrics', request.body)
-  //Slect from metrics where userid = user
-  //if rows > 0  update metrics, else insert
-
   let sqlCheck = 'SELECT * FROM metrics WHERE users_id =$1;'
   let safeVal = [user];
   client.query(sqlCheck, safeVal).then((result) => {
-    console.log('save result', result)
     if (result.rowCount > 0) {
-      console.log('user', user)
       return updateMetrics(request, response);
     } else {
       let { age, height, sex, weight, getActivity, goal, loss } = request.body;
-      console.log('actual metrics', age, height, sex)
       let SQL = 'INSERT INTO metrics (age, height, sex, weight, getActivity, goal, loss, users_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);';
       let values = [age, height, sex, weight, getActivity, goal, loss, request.params.user_id];
 
@@ -330,9 +291,7 @@ function saveMetricsToDB(request, response) {
         .then(searchNewMeals(request, response))
         .catch(err => handleError(err, response))
     }
-
   })
-
 }
 
 function updateMetrics(request, response) {
